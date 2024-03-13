@@ -16,11 +16,9 @@ For a comprehensive analysis and findings on mortality trends, please refer to m
 ## Discussion
 The analysis is critical for shaping healthcare strategies tailored to different demographics and for informing future public health interventions. The study's findings provide valuable insights for healthcare planning, underscoring the need for demographic-specific approaches.
 
-## Visualizations
-Figures and charts from the study are included to illustrate the findings more vividly.
-
 ## Code
 The Python scripts used for data analysis are provided to ensure transparency and reproducibility.
+For the source code related to the analysis, please refer to (https://github.com/RazanHussien/US-Causes-of-Death-Trends-2000-2019/blob/main/code/Code%20Folder)
 
 ## Conclusion
 This research emphasizes the critical role of tailored healthcare strategies and offers vital insights for future health initiatives and research.
