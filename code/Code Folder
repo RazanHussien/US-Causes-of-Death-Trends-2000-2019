@@ -1,0 +1,414 @@
+--Code used to load the data into Jupyter Notebook:
+!pip install pyodbc
+import pyodbc 
+conn = pyodbc.connect('Driver={ODBC Driver 17 for SQL Server};'
+                      'Server=RAZANHUSSIEN\SQLEXPRESS;'
+                      'Database=Death_Causes;'
+                      'Trusted_Connection=yes;')
+import pandas as pd
+
+query = "SELECT * FROM Death_Causes"
+df = pd.read_sql(query, conn)
+!pip install sqlalchemy
+from sqlalchemy import create_engine
+engine = create_engine("mssql+pyodbc://RAZANHUSSIEN\SQLEXPRESS/Death_Causes?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server")
+df = pd.read_sql(query, engine)
+query = "SELECT * FROM Death_Causes"
+df = pd.read_sql(query, engine)
+df.head()
+------------------------------------------
+
+--Code used to plot Figure 1:
+
+#Total deaths per year
+
+plt.figure(figsize=(10, 6))
+(yearly_deaths / 1_000_000).plot()
+plt.title('Total Deaths per Year in the US')
+plt.xlabel('Year')
+plt.ylabel('Total Deaths (in Millions)')
+plt.yticks(np.arange(8, max(yearly_deaths/1_000_000) + 1, 0.5))
+--This line creates a series of y-axis tick marks starting at 8 million deaths, ending just above the maximum number of deaths in the data set (converted to millions), with each tick 0.5 million deaths apart.
+plt.xticks(yearly_deaths.index.astype(int))  # This line to make sure the years are displayed as whole numbers
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+------------------------------------------
+
+
+--Code used to plot Figure 2:
+
+#Overall analysis of the top 15 Causes of Death
+import matplotlib.pyplot as plt
+
+df_rate = df[df['metric_name'] == 'Rate']
+
+grouped_data= df_rate.groupby(['cause_name', 'year'])['val'].sum().reset_index()
+
+# Finding the top 5 causes of death by summing across all years
+top_causes = grouped_data. groupby('cause_name')['val'].sum().nlargest(15).index
+
+# Filter the grouped data for only the top causes
+top_causes_data = grouped_data[grouped_data['cause_name'].isin(top_causes)]
+
+# Pivoting the data to get years as the index and causes as columns
+pivot_top_causes_data = top_causes_data.pivot(index='year', columns='cause_name', values='val')
+
+plt.figure(figsize=(14,7))
+for cause in pivot_top_causes_data.columns:
+plt.plot(pivot_top_causes_data.index.astype(str), pivot_top_causes_data[cause], label=cause)
+
+plt.title('Top 15 Causes of Death Rates Over the Years')
+plt.xlabel('Year')
+plt.ylabel('Death Rate (per 100,000)')
+plt.legend(title='Cause of Death', loc='upper left')
+plt.grid(True)
+plt.show()
+------------------------------------------
+--Code used to plot Figure 3:
+import matplotlib.pyplot as plt
+import numpy as np
+deaths_by_gender = df.groupby('sex_name')['val'].sum()
+#Formatting Labels
+formatted_labels = [f"{value/1_000_000:.0f}M" for value in deaths_by_gender.values]
+fig, ax = plt.subplots(figsize=(8,6))
+bars = ax.bar(deaths_by_gender.index, deaths_by_gender.values, color=colors)
+ax.bar_label(bars, labels=formatted_labels, label_type='edge', padding=3)
+
+plt.title('Total Deaths by Gender (Female/Male)')
+plt.ylabel('Number of Deaths')
+plt.xlabel('Gender')
+plt.xticks(rotation=0)
+plt.yticks(np.arange(0, max_val + 1, 50_000_000), [format_millions(x) for x in np.arange(0, max_val + 1, 50_000_000)])
+plt.tight_layout()
+plt.show()
+------------------------------------------
+
+--Code used to plot Figure 4:
+
+For Males:
+import matplotlib.pyplot as plt
+
+
+# Filter the data for males
+male_data = df[df['sex_name'] == 'Male']
+
+
+# Group by cause of death and sum across all years
+grouped_male_data = male_data.groupby('cause_name')['val'].sum().reset_index()
+
+# Get the top 5 causes of death
+top_causes = grouped_male_data.nlargest(6, 'val')
+
+# Sum the values of all other causes
+other_causes_sum = grouped_male_data[grouped_male_data['cause_name'].isin(top_causes['cause_name'])]['val'].sum()
+
+# Create a new row for 'Other Causes of Death'
+other_causes_row = pd.DataFrame({
+'cause_name': ['Other Causes of Death'],
+'val': [other_causes_sum]
+})
+
+# Combine the top causes with the 'Other Causes' row
+pie_data = pd.concat([top_causes, other_causes_row], ignore_index=True)
+
+# Plot the pie chart
+plt.figure(figsize=(10, 6))
+plt.pie(pie_data['val'], labels=pie_data['cause_name'], autopct='%1.1f%%', startangle=140)
+plt.title('Causes of Death Distribution for Males')
+plt.axis('equal')  # to ensure that pie is drawn as a circle.
+plt.show()
+
+For Females:
+#Females
+import matplotlib.pyplot as plt
+
+
+# Filter the data for females
+female_data = df[df['sex_name'] == 'Female']
+
+
+# Group by cause of death and sum across all years
+grouped_female_data = female_data.groupby('cause_name')['val'].sum().reset_index()
+
+# Get the top 5 causes of death
+top_causes = grouped_female_data.nlargest(6, 'val')
+
+# Sum the values of all other causes
+other_causes_sum = grouped_female_data[grouped_female_data['cause_name'].isin(top_causes['cause_name'])]['val'].sum()
+
+# Create a new row for 'Other Causes of Death'
+other_causes_row = pd.DataFrame({
+'cause_name': ['Other Causes of Death'],
+'val': [other_causes_sum]
+})
+
+# Combine the top causes with the 'Other Causes' row
+pie_data = pd.concat([top_causes, other_causes_row], ignore_index=True)
+
+# Plot the pie chart
+plt.figure(figsize=(10, 6))
+plt.pie(pie_data['val'], labels=pie_data['cause_name'], autopct='%1.1f%%', startangle=140)
+plt.title('Causes of Death Distribution for Females')
+plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+plt.show()
+------------------------------------------
+import matplotlib.pyplot as plt
+import numpy as np
+grouped_data =df.groupby(['year', 'sex_name'])['val'].sum().unstack()
+colors = ['purple', 'grey']
+fig, ax = plt.subplots(figsize=(14,8))
+grouped_data.plot(kind='bar', ax=ax, color=colors)
+#Formatting y-Label
+yticks_values = np.arange(0, 7_000_001, 1_000_000)
+yticks_labels = [f"{x//1_000_000}M" for x in yticks_values]
+
+plt.title('Total Deaths by Gender (Female/Male) Over the Years')
+plt.ylabel('Number of Deaths')
+plt.xlabel('Year')
+plt.xticks(rotation=45)
+plt.yticks(yticks_values, yticks_labels)
+plt.legend(title='Gender')
+plt.tight_layout()
+plt.show()
+------------------------------------------
+
+--Code used to plot Figure 6:
+#Total Deaths of Females & males per Year
+
+import matplotlib.pyplot as plt
+import numpy as np
+grouped_data =df.groupby(['year', 'sex_name'])['val'].sum().unstack()
+colors = ['purple', 'grey']
+fig, ax = plt.subplots(figsize=(14,8))
+grouped_data.plot(kind='bar', ax=ax, color=colors)
+#Formatting y-Label
+yticks_values = np.arange(0, 7_000_001, 1_000_000)
+yticks_labels = [f"{x//1_000_000}M" for x in yticks_values]
+
+plt.title('Total Deaths by Gender (Female/Male) Over the Years')
+plt.ylabel('Number of Deaths')
+plt.xlabel('Year')
+plt.xticks(rotation=45)
+plt.yticks(yticks_values, yticks_labels)
+plt.legend(title='Gender')
+plt.tight_layout()
+plt.show()
+------------------------------------------
+
+--Code used to plot Figure 7:
+
+
+#Regrouping age groups and analyzing over the years
+#Defining the revised age-groups:
+import pandas as pd
+import matplotlib.pyplot as plt
+
+age_group_mapping = {
+'<5 years': 'Children',
+'5-9 years': 'Children',
+'10-14 years':'Children',
+'15-19 years': 'Young',
+'20-24 years': 'Young',
+'25-29 years': 'Young',
+'30-34 years': 'Young',
+'35-39 years': 'Middle Age',
+'40-44 years': 'Middle Age',
+'45-49 years': 'Middle Age',
+'50-69 years': 'Elderly',
+'70-89 years': 'Elderly'
+}
+
+# Filter the data for the "Rate" metric
+df_rate = df[df['metric_name'] == 'Rate']
+
+# Apply the age group mapping
+df_rate['age_group'] = df_rate['age_name'].map(age_group_mapping)
+
+# Group by age_group and year
+grouped_data_rate = df_rate.groupby(['age_group', 'year'])['val'].sum().reset_index()
+
+# Pivot the data for plotting
+pivot_data_rate = grouped_data_rate.pivot(index='year', columns='age_group', values='val')
+
+# Plotting
+plt.figure(figsize=(14,7))
+for column in pivot_data_rate.columns:
+plt.plot(pivot_data_rate.index.astype(str), pivot_data_rate[column], label=column)
+
+plt.title('Death Rates by Age Group Over the Years 2000-2019 (per 100,000)')
+plt.xlabel('Year')
+plt.ylabel('Death Rate (per 100,000)')
+plt.legend()
+plt.grid(True)
+plt.show()
+------------------------------------------
+
+--Code used to plot Figure 8:
+
+#Total Deaths per Age Group
+import matplotlib.pyplot as plt
+import numpy as np
+death_age_group=df.groupby('age_name')['val'].sum()
+death_age_group=death_age_group.sort_values(ascending=False)
+
+
+# Formatting the graph
+plt.figure(figsize=(14, 8))
+
+(death_age_group / 1e6).plot(kind='bar', color='darkblue')
+
+plt.title("Total Death Counts by Age Group")
+plt.xlabel("Age Group")
+plt.ylabel("Total Deaths (in Millions)")
+plt.xticks(rotation=45)
+plt.grid(axis='y')
+plt.tight_layout()
+
+plt.show()
+------------------------------------------
+
+--Code used to plot Figure 9:
+
+population_df = pd.read_csv("C:\different ages population.csv")
+population_data_types = population_df.dtypes
+population_data_types
+
+# removing leading and trailing spaces from column names
+population_df.columns = population_df.columns.str.strip()
+print(population_df.columns)
+
+# This is the code used to draw the pie chart that shows the average distribution of population
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load the CSV file
+file_path = "C:\different ages population.csv"
+population_data = pd.read_csv(file_path)
+
+# Calculating the mean population for each age group
+average_population = population_data.drop('Year', axis=1).mean()
+
+# Creating a pie chart
+plt.figure(figsize=(10, 6))
+plt.pie(average_population, labels=average_population.index, autopct='%1.1f%%', startangle=140)
+plt.title('Average Population Distribution by Age Group')
+plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+plt.show()
+------------------------------------------
+
+--Code used to plot Table I:
+#  mapping from original age groups(Death data) to broader categories (Population data)--df is for Death Causes file
+age_group_mapping = {
+'<5 years': '0-18',
+'5-9 years': '0-18',
+'10-14 years': '0-18',
+'15-19 years': '0-18',
+'20-24 years': '19-25',
+'25-29 years': '26-34',
+'30-34 years': '26-34',
+'35-39 years': '35-54',
+'40-44 years': '35-54',
+'45-49 years': '35-54',
+'50-69 years': '55-64',
+'70-89 years': '65+',
+'80+ years': '65+'
+}
+# Ensuring that I'm only using the years from 2008 which is the start year in the population data
+#Adding .copy() to work with a copy of the data and not a view to avoid potential issues with inadvertent changes to the original dataframe.
+# Filtering out rows with missing 'val' values to ensure entegrity of data representation.
+
+filtered_death_data = filtered_death_data.dropna(subset=['val'])
+
+filtered_death_data = df[(df['metric_name'] == 'Number') & (df['year'] >= 2008) & (df['year'] <= 2019)].copy()
+
+filtered_death_data['new_age_group'] = filtered_death_data['age_name'].map(age_group_mapping)
+
+# Aggregating the death data by new age group
+
+avg_death_data = filtered_death_data.groupby('new_age_group')['val'].mean().reset_index()
+
+avg_death_data.columns = ['age_group','avg_deaths']
+
+# Using Melt function on the population data so as to make it similar to the death causes data
+
+columns_to_convert = ['0-18', '19-25', '26-34', '35-54', '55-64', '65+']
+population_melted = population_df.melt(id_vars=['Year'], value_vars=columns_to_convert, var_name='age_group', value_name='population')
+
+# Aggregating population data by age group
+avg_population_data = population_melted.groupby('age_group')['population'].mean().reset_index()
+
+# Merge the average death and population data
+avg_data_merged = pd.merge(avg_death_data, avg_population_data, on='age_group')
+
+# Calculating the percentage of population by death
+
+avg_data_merged['percentage_population_by_death'] = (avg_data_merged['avg_deaths'] / avg_data_merged['population']) *100
+
+
+# For formatting the numbers for better readability
+avg_data_merged['population'] = avg_data_merged['population'].apply(lambda x: "{:,.0f}".format(x))
+avg_data_merged['avg_deaths'] = avg_data_merged['avg_deaths'].apply(lambda x: "{:,.0f}".format(x))
+avg_data_merged['percentage_population_by_death'] = avg_data_merged['percentage_population_by_death'].apply(lambda x: "{:.6f}%".format(x))
+print(avg_data_merged)
+
+------------------------------------------
+
+--Code used to plot Figure 10, 11, 12 and 13:
+#yearly death rates (15 top causes) for each grouped age-group(elderly,young,middle age and children) 
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# age group mapping
+age_group_mapping = {
+    '<5 years': 'Children',
+    '5-9 years': 'Children',
+    '10-14 years':'Children',
+    '15-19 years': 'Young',
+    '20-24 years': 'Young',
+    '25-29 years': 'Young',
+    '30-34 years': 'Young',
+    '35-39 years': 'Middle Age',
+    '40-44 years': 'Middle Age',
+    '45-49 years': 'Middle Age',
+    '50-69 years': 'Elderly',
+    '70-89 years': 'Elderly'
+}
+# Applying the mapping to the df
+df['age_group'] = df['age_name'].map(age_group_mapping)
+
+# Filter the dataframe for the 'Rate' metric
+rates_data = df[df['metric_name'] == 'Rate']
+
+
+
+
+# Looping through each age group and creating a scatter plot
+for age_group in rates_data['age_group'].dropna().unique():  # Exclude NaN values in 'age_group' because i have values that are not included in the mapping like 80+
+    # Filter data for the specific age group
+    age_group_rates_data = rates_data[rates_data['age_group'] == age_group]
+    
+    # Determine the top 15 causes for this age group
+    top_causes = age_group_rates_data.groupby('cause_name')['val'].sum().nlargest(15).index
+
+    # Filter for only the top causes
+    top_causes_data = age_group_rates_data[age_group_rates_data['cause_name'].isin(top_causes)]
+    top_causes_data = top_causes_data.sort_values(by='year')
+
+    # Generate a scatter plot for each cause
+    plt.figure(figsize=(15, 8))
+    for cause in top_causes:
+        cause_data = top_causes_data[top_causes_data['cause_name'] == cause]
+        plt.scatter(cause_data['year'].astype(str), cause_data['val'], label=cause)
+    
+    # Add title and labels
+    plt.title(f'Top 15 Causes of Death by Rate Over Years - {age_group}')
+    plt.xlabel('Year')
+    plt.ylabel('Death Rate per 100,000')
+    
+    # Add legend
+    plt.legend(title='Cause of Death', bbox_to_anchor=(1.05, 1), loc='upper left')
+    
+    # Show the plot
+    plt.show()
+
