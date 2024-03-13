@@ -11,6 +11,7 @@ Using two main datasets, this study examines the primary causes of death, levera
 
 ## Results
 My findings reveal a complex picture of U.S. mortality, showing how various factors, including demographic shifts and healthcare challenges, contribute to the changing landscape of public health.
+For a comprehensive analysis and findings on mortality trends, please refer to my detailed report (https://github.com/RazanHussien/US-Causes-of-Death-Trends-2000-2019/blob/main/Analysis%20of%20The%20Leading%20Causes%20of%20Death%20in%20the%20United%20States%20over%20the%20Years%20(2000-2019).pdf)
 
 ## Discussion
 The analysis is critical for shaping healthcare strategies tailored to different demographics and for informing future public health interventions. The study's findings provide valuable insights for healthcare planning, underscoring the need for demographic-specific approaches.
